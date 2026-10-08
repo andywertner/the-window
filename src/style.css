@@ -277,6 +277,9 @@ textarea { width: 100%; min-height: 52px; max-height: 72px; resize: none; flex: 
 .quiet-btn { background: #fff; color: var(--ink); }
 .methods { display: flex; flex-wrap: wrap; gap: 8px; }
 .methods.stack { flex-direction: column; align-items: stretch; }
+.change-controls { display: flex; flex-wrap: wrap; gap: 8px; flex: none; }
+.change-controls .go.get { background: var(--get); }
+.total small { font-size: 0.8rem; color: var(--muted); }
 .verb {
   flex: 1 1 96px;
   min-height: 44px;

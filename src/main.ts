@@ -59,6 +59,7 @@ function advance(): void {
   state.placed = [];
   state.chose = false;
   state.gets = 0;
+  state.changeGets = 0;
   state.posted = false;
   state.patched = false;
   state.removed = false;
@@ -88,9 +89,9 @@ function ready(): boolean {
   if (step.kind === "card") return gateElapsed() === null;
   if (step.kind === "sort") return sortDone(step.items, state.placed);
   if (step.kind === "get") return state.gets >= 2;
-  if (step.kind === "post") return state.posted;
-  if (step.kind === "patch") return state.patched;
-  if (step.kind === "remove") return state.removed;
+  if (step.kind === "post") return state.posted && state.changeGets > 0;
+  if (step.kind === "patch") return state.patched && state.changeGets > 0;
+  if (step.kind === "remove") return state.removed && (state.mine.length === 0 || state.changeGets > 0);
   if (step.kind === "probe") return state.seen.empty && state.seen.address && state.seen.body;
   if (step.kind === "choose") return state.chose;
   return false;
@@ -227,6 +228,26 @@ async function onGet(): Promise<void> {
   });
 }
 
+async function onChangeGet(): Promise<void> {
+  const step = currentStep(state);
+  const changed =
+    (step?.kind === "post" && state.posted) ||
+    (step?.kind === "patch" && state.patched) ||
+    (step?.kind === "remove" && state.removed);
+  if (!changed) return;
+  await run(async (id) => {
+    const got = await getAll();
+    if (id !== ticket) return;
+    state.exchange = got.exchange;
+    applyBoard(got.json);
+    state.changeGets += 1;
+    const now = currentStep(state);
+    if (now?.kind === "post" || now?.kind === "patch" || now?.kind === "remove") {
+      state.success = now.success;
+    }
+  });
+}
+
 async function onVerb(method: string): Promise<void> {
   const step = currentStep(state);
   if (step?.kind !== "post" || state.posted) return;
@@ -261,13 +282,9 @@ async function onVerb(method: string): Promise<void> {
       return;
     }
     state.mine = state.mine.concat(key);
-    const got = await getAll();
-    if (id !== ticket) return;
-    applyBoard(got.json);
     state.posted = true;
     state.note = "";
-    const now = currentStep(state);
-    if (now?.kind === "post") state.success = now.success;
+    state.success = "POST worked. Now send GET to read the updated class board.";
   });
 }
 
@@ -282,14 +299,8 @@ async function onPatch(): Promise<void> {
       state.wrong = "The window answered, and the count did not change.";
       return;
     }
-    if (typeof patched.json === "number") state.fives = patched.json;
-    const got = await getAll();
-    if (id !== ticket) return;
-    applyBoard(got.json);
-    if (typeof patched.json === "number") state.fives = patched.json;
     state.patched = true;
-    const now = currentStep(state);
-    if (now?.kind === "patch") state.success = now.success;
+    state.success = "PATCH worked. Now send GET to read the updated class data.";
   });
 }
 
@@ -307,10 +318,8 @@ async function onDelete(): Promise<void> {
       if (id !== ticket) return;
     }
     state.exchange = last.exchange;
-    applyBoard(last.json);
     state.removed = true;
-    const now = currentStep(state);
-    if (now?.kind === "remove") state.success = now.success;
+    state.success = "DELETE worked. Now send GET to see the updated class board.";
   });
 }
 
@@ -437,6 +446,7 @@ function onClick(event: MouseEvent): void {
     return;
   }
   if (act === "send-get") void onGet();
+  if (act === "refresh-after-change") void onChangeGet();
   if (act === "verb") void onVerb(target.dataset.method ?? "");
   if (act === "send-patch") void onPatch();
   if (act === "send-delete") void onDelete();

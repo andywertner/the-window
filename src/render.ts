@@ -138,6 +138,7 @@ function getView(state: State, prompt: string, _success: string): string {
 }
 
 function postView(state: State, prompt: string): string {
+  const refreshed = state.changeGets > 0;
   return `<h2>${escape(prompt)}</h2>
     ${banner(state)}
     ${state.posted ? "" : `<p class="signed">Signed as ${escape(state.name)}</p>
@@ -149,25 +150,35 @@ function postView(state: State, prompt: string): string {
       ${verb("DELETE", state)}
     </div>`}
     ${board(state)}
-    ${next("Next", state.posted)}`;
+    ${state.posted ? changeControls(state, "GET class board", refreshed) : ""}`;
 }
 
 function patchView(state: State, prompt: string): string {
   const total = state.fives === null ? "…" : String(state.fives);
+  const refreshed = state.changeGets > 0;
   return `<h2>${escape(prompt)}</h2>
     ${banner(state)}
-    <p class="total">Class high fives: <strong>${escape(total)}</strong></p>
+    <p class="total">Class high fives <small>(latest GET)</small>: <strong>${escape(total)}</strong></p>
     ${state.patched ? "" : send("send-patch", "Add 1 high five", state.busy, "patch")}
-    ${next("Next", state.patched)}`;
+    ${state.patched ? changeControls(state, "GET latest class data", refreshed) : ""}`;
 }
 
 function removeView(state: State, prompt: string): string {
-  const ready = state.removed;
+  const changed = state.removed && (state.mine.length > 0 || state.changeGets > 0);
+  const ready = state.removed && (!changed || state.changeGets > 0);
   return `<h2>${escape(prompt)}</h2>
     ${banner(state)}
     ${board(state)}
     ${ready || state.mine.length === 0 ? "" : send("send-delete", state.mine.length > 1 ? "Take my notes down" : "Take my note down", state.busy, "delete")}
-    ${next("Next", ready)}`;
+    ${changed ? changeControls(state, "GET class board", state.changeGets > 0) : next("Next", ready)}`;
+}
+
+function changeControls(state: State, getLabel: string, refreshed: boolean): string {
+  return `<div class="change-controls">
+    ${send("refresh-after-change", getLabel, state.busy, "get")}
+    ${next("Next", refreshed)}
+  </div>
+  <p class="hint">${refreshed ? "GET again any time to see new class responses." : "Use GET to read what is now stored on the shared board."}</p>`;
 }
 
 function probeView(state: State, prompt: string): string {

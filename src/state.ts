@@ -24,6 +24,7 @@ export interface State {
   success: string | null;
   chose: boolean;
   gets: number;
+  changeGets: number;
   posted: boolean;
   patched: boolean;
   removed: boolean;
@@ -56,6 +57,7 @@ export function fresh(): State {
     success: null,
     chose: false,
     gets: 0,
+    changeGets: 0,
     posted: false,
     patched: false,
     removed: false,
@@ -85,6 +87,7 @@ export function load(): State {
   next.success = typeof saved.success === "string" ? saved.success : null;
   next.chose = saved.chose === true;
   next.gets = typeof saved.gets === "number" ? saved.gets : 0;
+  next.changeGets = typeof saved.changeGets === "number" ? saved.changeGets : 0;
   next.posted = saved.posted === true;
   next.patched = saved.patched === true;
   next.removed = saved.removed === true;
