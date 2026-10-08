@@ -9,24 +9,26 @@
       ${e.wrong?`<p class="banner bad" aria-live="polite">${a(e.wrong)}</p>`:""}
       <button type="submit" class="go">Start</button>
     </form>
-  </main>`}function Re(e,t,o){const s=e.phase==="done"?"You did it":b[e.level]?.title??"";return`<header>
+  </main>`}function Re(e,t,o){const s=e.phase==="done"?"You did it":b[e.level]?.title??"",r=e.phase==="done"?U:e.level+1,i=e.phase==="done"||u(e)?.kind==="card";return`<header>
       <div class="titles">
         <h1>The Window</h1>
-        <p class="part">Part ${e.phase==="done"?U:e.level+1} of ${U} · ${a(s)}</p>
+        <p class="part">Part ${r} of ${U} · ${a(s)}</p>
       </div>
       ${t?'<button type="button" class="teacher" data-act="teacher">Clear class board</button>':""}
-      <div class="pips" aria-hidden="true">${b.map((i,c)=>`<i class="${Ze(e,c)}"></i>`).join("")}</div>
+      <div class="pips" aria-hidden="true">${b.map((c,f)=>`<i class="${Ze(e,f)}"></i>`).join("")}</div>
     </header>
     <div class="stage">
-      <section class="lesson">${o}</section>
+      <section class="lesson${i?" solo":""}">${o}</section>
       ${Ke(e)}
     </div>`}function qe(e){const t=u(e);return t?t.kind==="card"?Ye(t.lines,t.button):t.kind==="sort"?De(e,t):t.kind==="get"?Be(e,t.prompt,t.success):t.kind==="post"?We(e,t.prompt):t.kind==="patch"?He(e,t.prompt):t.kind==="remove"?Ve(e,t.prompt):t.kind==="probe"?Fe(e,t.prompt):Ue(e,t.prompt,t.options):""}function Ye(e,t){return`<div class="card">${e.map(o=>`<p>${a(o)}</p>`).join("")}
     <button type="button" class="go" data-act="next">${a(t)}</button>
-  </div>`}function De(e,t){const o=O(t.items,e.placed),s=t.items.some(i=>i.label.length>24),r=t.items.filter(i=>!e.placed.some(c=>c.id===i.id));return`<h2>${a(t.prompt)}</h2>
+  </div>`}function De(e,t){const o=O(t.items,e.placed),s=t.items.some(c=>c.label.length>24),r=t.items.filter(c=>!e.placed.some(f=>f.id===c.id)),i=t.bins.length>=5;return`<h2>${a(t.prompt)}</h2>
     ${y(e)}
     ${t.recap?'<p class="recap">You saw 200, 404, and 400.</p>':""}
-    <div class="pile${s?" long":""}">${r.map(i=>Me(i,e)).join("")||'<p class="empty">Every slip is in a bin.</p>'}</div>
-    <div class="bins" data-n="${t.bins.length}">${t.bins.map(i=>ze(i,t.items,e.placed)).join("")}</div>
+    <div class="sort-body${i?" wide":""}">
+      <div class="pile${s?" long":""}">${r.map(c=>Me(c,e)).join("")||'<p class="empty">Every slip is in a bin.</p>'}</div>
+      <div class="bins fit" data-n="${t.bins.length}">${t.bins.map(c=>ze(c,t.items,e.placed)).join("")}</div>
+    </div>
     ${o?"":`<p class="hint">${a(t.hint)}</p>`}
     ${v("Next",o)}`}function Me(e,t){return`<button type="button" class="${["slip",t.selected===e.id?"sel":"",t.badId===e.id?"bad":""].filter(Boolean).join(" ")}" data-act="item" data-item="${a(e.id)}" aria-pressed="${t.selected===e.id}">${a(e.label)}</button>`}function ze(e,t,o){const s=o.filter(r=>r.bin===e.id).map(r=>t.find(i=>i.id===r.id)?.label??"").filter(Boolean);return`<button type="button" class="bin bin-${a(e.id)}" data-act="zone" data-zone="${a(e.id)}">
     <b>${a(e.label)}</b>
@@ -61,11 +63,11 @@
       ${q("Bad address",e.seen.address,"404")}
       ${q("Broken body",e.seen.body,"400")}
     </ul>
-    <div class="methods stack">
+    ${o?"":`<div class="methods stack">
       ${R("empty","Look in an empty locker",e)}
       ${R("address","Open a bad address",e)}
       ${R("body","Send a broken body",e)}
-    </div>
+    </div>`}
     ${v("Match the codes",o)}`}function Ue(e,t,o){return`<h2>${a(t)}</h2>
     ${y(e)}
     <div class="methods">
@@ -95,7 +97,7 @@
       ${e.bootError?`<p class="banner bad">${a(e.bootError)}</p>`:""}
       ${s}
     </div>
-  </aside>`}function B(e){return e.board.length===0?'<p class="empty">The board shows up here after you reach the window.</p>':`<ul class="board">${e.board.map(t=>Je(t,e.mine.includes(t.key))).join("")}</ul>`}function Je(e,t){const o=e.welcome?"welcome":t?"mine":"",s=e.welcome?"Already here":a(e.name);return`<li class="${o}"><b>${s}</b><span>${a(e.text)}</span></li>`}function y(e){return e.wrong?`<p class="banner bad" aria-live="polite">${a(e.wrong)}</p>`:e.success?`<p class="banner good" aria-live="polite">${a(e.success)}</p>`:""}function v(e,t){return t?`<button type="button" class="go" data-act="next">${a(e)}</button>`:""}function W(e,t,o,s){return`<button type="button" class="go ${s}" data-act="${e}" ${o?"disabled":""}>${a(t)}</button>`}function G(e,t){return`<button type="button" class="${["verb",e.toLowerCase(),t.badId===e?"bad":""].filter(Boolean).join(" ")}" data-act="verb" data-method="${e}" ${t.busy?"disabled":""}>${e}</button>`}function R(e,t,o){return`<button type="button" class="go quiet-btn ${o.seen[e]?"picked":""}" data-act="probe" data-probe="${e}" ${o.busy?"disabled":""}>${a(t)}</button>`}function q(e,t,o){return`<li class="${t?"on":""}">${a(e)}${t?` · ${o}`:""}</li>`}function Ze(e,t){return e.phase==="done"||t<e.level?"done":t===e.level?"now":""}function Qe(e){return e.confirmReset?`<div class="veil"><div class="ask">
+  </aside>`}function B(e){return e.board.length===0?'<p class="empty fit">The board shows up here after you reach the window.</p>':`<ul class="board fit">${e.board.map(t=>Je(t,e.mine.includes(t.key))).join("")}</ul>`}function Je(e,t){const o=e.welcome?"welcome":t?"mine":"",s=e.welcome?"Already here":a(e.name);return`<li class="${o}"><b>${s}</b><span>${a(e.text)}</span></li>`}function y(e){return e.wrong?`<p class="banner bad" aria-live="polite">${a(e.wrong)}</p>`:e.success?`<p class="banner good" aria-live="polite">${a(e.success)}</p>`:""}function v(e,t){return t?`<button type="button" class="go" data-act="next">${a(e)}</button>`:""}function W(e,t,o,s){return`<button type="button" class="go ${s}" data-act="${e}" ${o?"disabled":""}>${a(t)}</button>`}function G(e,t){return`<button type="button" class="${["verb",e.toLowerCase(),t.badId===e?"bad":""].filter(Boolean).join(" ")}" data-act="verb" data-method="${e}" ${t.busy?"disabled":""}>${e}</button>`}function R(e,t,o){return`<button type="button" class="go quiet-btn ${o.seen[e]?"picked":""}" data-act="probe" data-probe="${e}" ${o.busy?"disabled":""}>${a(t)}</button>`}function q(e,t,o){return`<li class="${t?"on":""}">${a(e)}${t?` · ${o}`:""}</li>`}function Ze(e,t){return e.phase==="done"||t<e.level?"done":t===e.level?"now":""}function Qe(e){return e.confirmReset?`<div class="veil"><div class="ask">
       <p>Start the lesson over on this computer?</p>
       <div class="methods">
         <button type="button" class="go quiet-btn" data-act="new-no">Keep going</button>
