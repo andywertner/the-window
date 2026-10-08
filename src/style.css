@@ -116,7 +116,7 @@ header {
   gap: 10px;
   padding: 8px 12px 56px;
 }
-.stage.play { grid-template-columns: minmax(0, 4fr) minmax(170px, 1fr); }
+.stage.play { grid-template-columns: minmax(170px, 1fr) minmax(0, 4fr); }
 .stage.play .window { order: 1; }
 .stage.play .lesson { order: 2; }
 .lesson, .pane { min-height: 0; overflow: auto; }
@@ -488,6 +488,7 @@ pre {
 
 @media (max-width: 980px) {
   .stage, .stage.play { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1.3fr) minmax(120px, 0.7fr); }
+  .stage.play { grid-template-rows: minmax(120px, 0.7fr) minmax(0, 1.3fr); }
   .stage.solo { grid-template-rows: minmax(0, 1fr); }
   .bins[data-n="3"] { grid-template-columns: 1fr; }
   .sort-body.wide { grid-template-columns: 1fr; }
