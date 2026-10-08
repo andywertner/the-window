@@ -230,7 +230,7 @@ function panel(state: State): string {
       <p class="hint">${escape(statusHint(exchange.status))}</p>
       <pre>${escape(exchange.response)}</pre>`;
   return `<aside class="window" aria-live="polite">
-    <div class="window-bar"><i></i><i></i><i></i><span>The window</span></div>
+    <div class="window-bar"><i></i><i></i><i></i><span>🪟 The window</span><em>The raw request and response</em></div>
     <div class="pane">
       ${state.busy ? `<p class="wait">Waiting for the window…</p>` : ""}
       ${state.bootError ? `<p class="banner bad">${escape(state.bootError)}</p>` : ""}
@@ -240,8 +240,14 @@ function panel(state: State): string {
 }
 
 function board(state: State): string {
-  if (state.board.length === 0) return `<p class="empty fit">The board shows up here after you reach the window.</p>`;
-  return `<ul class="board fit">${state.board.map((note) => noteView(note, state.mine.includes(note.key))).join("")}</ul>`;
+  const notes =
+    state.board.length === 0
+      ? `<p class="empty">The notes show up here after the first GET.</p>`
+      : `<ul class="board">${state.board.map((note) => noteView(note, state.mine.includes(note.key))).join("")}</ul>`;
+  return `<section class="boardbox fit" aria-label="Class board">
+    <div class="boardbox-bar"><span aria-hidden="true">📋</span> Class board <em>What the app shows you</em></div>
+    ${notes}
+  </section>`;
 }
 
 function noteView(note: Note, mine: boolean): string {

@@ -68,7 +68,9 @@ export const LEVELS: Level[] = [
         tag: "APIs are everywhere",
       }),
       slide("🗺️", "A map app", "Asks a map API how to get somewhere. The route comes back, turn by turn.", { tag: "APIs are everywhere" }),
-      slide("🏫 📋", "Today: a class board", "The computer on the other side holds a shared class board. You will send it real requests.", {
+      slide("🏫 📋", "Today: a class board", "The computer on the other side holds a shared class board. You will send it real requests."),
+      slide("📋 ↔ 🪟", "Two boxes on your screen", "The class board shows the notes the way an app would. The window shows the raw request and response behind it.", {
+        example: "📋 what you see   🪟 what was sent",
         button: "Let's go",
       }),
     ],

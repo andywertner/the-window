@@ -1,6 +1,6 @@
 import puppeteer from "puppeteer-core";
 
-const counts = [10, 8, 3, 4, 6, 4, 3, 8, 5];
+const counts = [11, 8, 3, 4, 6, 4, 3, 8, 5];
 const exchange = {
   method: "POST",
   url: "https://store.zapier.com/api/records?secret=••••",
