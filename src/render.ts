@@ -8,11 +8,11 @@ const GATE_WORDS = ["Soaking it in…", "Brain loading…", "Let it sink in…",
 
 export function render(state: State, teacher: boolean, gate: number | null): string {
   const page =
-    state.phase === "name" ? nameScreen(state) : shell(state, teacher, state.phase === "done" ? doneView() : stepView(state, gate));
+    state.phase === "name" ? nameScreen(state, teacher) : shell(state, state.phase === "done" ? doneView() : stepView(state, gate));
   return page + overlay(state);
 }
 
-function nameScreen(state: State): string {
+function nameScreen(state: State, teacher: boolean): string {
   return `<main class="name">
     <div class="panes" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <h1>The Window</h1>
@@ -23,10 +23,12 @@ function nameScreen(state: State): string {
       ${state.wrong ? `<p class="banner bad" aria-live="polite">${escape(state.wrong)}</p>` : ""}
       <button type="submit" class="go">Start</button>
     </form>
+    ${teacher ? `<button type="button" class="teacher" data-act="teacher">Clear class board</button>` : ""}
+    ${teacher && state.success ? `<p class="banner good" aria-live="polite">${escape(state.success)}</p>` : ""}
   </main>`;
 }
 
-function shell(state: State, teacher: boolean, main: string): string {
+function shell(state: State, main: string): string {
   const title = state.phase === "done" ? "You did it" : LEVELS[state.level]?.title ?? "";
   const part = state.phase === "done" ? PART_COUNT : state.level + 1;
   const solo = state.phase === "done" || currentStep(state)?.kind === "card";
@@ -35,7 +37,6 @@ function shell(state: State, teacher: boolean, main: string): string {
         <h1>The Window</h1>
         <p class="part">Part ${part} of ${PART_COUNT} · ${escape(title)}</p>
       </div>
-      ${teacher ? `<button type="button" class="teacher" data-act="teacher">Clear class board</button>` : ""}
       <div class="pips" aria-hidden="true">${LEVELS.map((_, index) => `<i class="${pipClass(state, index)}"></i>`).join("")}</div>
     </header>
     <div class="stage${solo ? " solo" : ""}">
