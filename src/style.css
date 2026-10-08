@@ -400,6 +400,7 @@ textarea { width: 100%; min-height: 52px; max-height: 72px; resize: none; flex: 
 .boardbox-bar em, .window-bar em { font-style: normal; font-size: 0.8rem; color: var(--muted); margin-left: auto; }
 .boardbox-bar em { color: #5a4224; }
 .boardbox .board, .boardbox .empty { margin: 0 8px 8px; min-height: 0; }
+.boardbox .board { height: 100%; overflow: auto; }
 .boardbox .empty { background: #f3e6d0; border-radius: 10px; padding: 8px 10px; }
 .board li, .checks li {
   display: flex;

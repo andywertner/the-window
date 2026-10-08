@@ -50,9 +50,15 @@ function draw(): void {
   }
   if (scrollBoard) {
     scrollBoard = false;
-    for (const node of document.querySelectorAll(".lesson, .board, .boardbox")) {
-      if (node instanceof HTMLElement) node.scrollTop = node.scrollHeight;
-    }
+    const scrollChat = () => {
+      const chat = document.querySelector("#chat");
+      if (chat instanceof HTMLElement) chat.scrollTop = chat.scrollHeight;
+    };
+    scrollChat();
+    requestAnimationFrame(() => {
+      scrollChat();
+      requestAnimationFrame(scrollChat);
+    });
   }
 }
 

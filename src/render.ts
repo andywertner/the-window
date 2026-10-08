@@ -274,7 +274,7 @@ function board(state: State, play = false): string {
   const notes =
     state.board.length === 0
       ? `<p class="empty">${play ? "Press GET to pull the latest notes." : "The notes show up here after the first GET."}</p>`
-      : `<ul class="board">${state.board.map((note) => noteView(note, state.mine.includes(note.key), play, state.busy)).join("")}</ul>`;
+      : `<ul class="board"${play ? ' id="chat"' : ""}>${state.board.map((note) => noteView(note, state.mine.includes(note.key), play, state.busy)).join("")}</ul>`;
   return `<section class="boardbox fit" aria-label="Class board">
     <div class="boardbox-bar"><span aria-hidden="true">📋</span> ${play ? "Frontend" : "Class board"} <em>${play ? "The class board" : "What the app shows you"}</em></div>
     ${notes}

@@ -94,12 +94,16 @@ export function notesFrom(data: unknown, prefix: string, welcomeKey: string, lik
     if (typeof name !== "string" || typeof text !== "string") continue;
     notes.push({ key, name, text, welcome: false, likes: likesOn(record, key, prefix, likePrefix, welcomeKey), at: postedAt(value) });
   }
-  notes.sort((a, b) => {
-    if (a.welcome !== b.welcome) return Number(b.welcome) - Number(a.welcome);
-    if (order === "time") return a.at - b.at || a.key.localeCompare(b.key);
-    return a.name.localeCompare(b.name) || a.key.localeCompare(b.key);
+  const ordered = notes.map((note, index) => ({ note, index }));
+  ordered.sort((a, b) => {
+    if (a.note.welcome !== b.note.welcome) return Number(b.note.welcome) - Number(a.note.welcome);
+    if (order === "time") {
+      if (a.note.at !== b.note.at) return a.note.at - b.note.at;
+      return a.index - b.index;
+    }
+    return a.note.name.localeCompare(b.note.name) || a.note.key.localeCompare(b.note.key);
   });
-  return notes;
+  return ordered.map((entry) => entry.note);
 }
 
 function postedAt(value: unknown): number {
