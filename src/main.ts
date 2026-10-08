@@ -2,7 +2,7 @@ import "./style.css";
 import { clearLesson, deleteKey, ensureWelcome, getAll, getBadAddress, getMissing, incrementFives, postBroken, postRecords } from "./api";
 import { LEVELS } from "./lesson";
 import { asRecord, cleanName, cleanNote, fivesFrom, gradeChoice, gradePost, noteKey, notesFrom, placeItem, sortDone, validName } from "./rules";
-import { render } from "./render";
+import { GATE_MS, render } from "./render";
 import { clearMine, clearProgress, currentStep, fresh, load, save, type State } from "./state";
 import { FIVES_KEY, NOTE_PREFIX, WELCOME_KEY, WELCOME_TEXT } from "./config";
 
@@ -14,12 +14,29 @@ let state: State = load();
 let ticket = 0;
 let zoom = 1;
 let boardDirty = false;
+let gateKey = "";
+let gateStart = 0;
+let gateTimer = 0;
+
+function gateElapsed(): number | null {
+  const step = currentStep(state);
+  if (teacher || state.phase !== "lesson" || step?.kind !== "card") return null;
+  const key = `${state.level}.${state.beat}`;
+  if (key !== gateKey) {
+    gateKey = key;
+    gateStart = Date.now();
+    window.clearTimeout(gateTimer);
+    gateTimer = window.setTimeout(draw, GATE_MS + 50);
+  }
+  const elapsed = Date.now() - gateStart;
+  return elapsed >= GATE_MS ? null : elapsed;
+}
 
 function draw(): void {
   boardDirty = false;
   const note = document.activeElement instanceof HTMLTextAreaElement && document.activeElement.id === "note" ? document.activeElement : null;
   const caret = note ? note.selectionStart : null;
-  app!.innerHTML = render(state, teacher);
+  app!.innerHTML = render(state, teacher, gateElapsed());
   app!.dataset.phase = state.phase;
   app!.classList.toggle("full", state.phase === "name");
   save(state);
@@ -68,7 +85,7 @@ function advance(): void {
 function ready(): boolean {
   const step = currentStep(state);
   if (!step) return false;
-  if (step.kind === "card") return true;
+  if (step.kind === "card") return gateElapsed() === null;
   if (step.kind === "sort") return sortDone(step.items, state.placed);
   if (step.kind === "get") return state.gets >= 2;
   if (step.kind === "post") return state.posted;
@@ -155,6 +172,7 @@ function begin(): void {
   state = fresh();
   state.name = name;
   state.phase = "lesson";
+  gateKey = "";
   draw();
   void warmup();
 }

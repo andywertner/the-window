@@ -1,9 +1,14 @@
-import { LEVELS, PART_COUNT, type Step } from "./lesson";
+import { LEVELS, PART_COUNT, VERB_ICONS, type Slide, type Step } from "./lesson";
 import { cleanNote, sortDone, statusHint, type Bin, type Note, type Placed, type SortItem } from "./rules";
 import { currentStep, type State } from "./state";
 
-export function render(state: State, teacher: boolean): string {
-  const page = state.phase === "name" ? nameScreen(state) : shell(state, teacher, state.phase === "done" ? doneView() : stepView(state));
+export const GATE_MS = 10000;
+const GATE_PANES = 10;
+const GATE_WORDS = ["Soaking it in…", "Brain loading…", "Let it sink in…", "Think about it…", "Picture it…", "Almost there…"];
+
+export function render(state: State, teacher: boolean, gate: number | null): string {
+  const page =
+    state.phase === "name" ? nameScreen(state) : shell(state, teacher, state.phase === "done" ? doneView() : stepView(state, gate));
   return page + overlay(state);
 }
 
@@ -33,28 +38,60 @@ function shell(state: State, teacher: boolean, main: string): string {
       ${teacher ? `<button type="button" class="teacher" data-act="teacher">Clear class board</button>` : ""}
       <div class="pips" aria-hidden="true">${LEVELS.map((_, index) => `<i class="${pipClass(state, index)}"></i>`).join("")}</div>
     </header>
-    <div class="stage">
+    <div class="stage${solo ? " solo" : ""}">
       <section class="lesson${solo ? " solo" : ""}">${main}</section>
-      ${panel(state)}
+      ${solo ? "" : panel(state)}
     </div>`;
 }
 
-function stepView(state: State): string {
+function stepView(state: State, gate: number | null): string {
   const step = currentStep(state);
   if (!step) return "";
-  if (step.kind === "card") return card(step.lines, step.button);
+  if (step.kind === "card") return card(step, slideCount(state), gate);
   if (step.kind === "sort") return sortView(state, step);
   if (step.kind === "get") return getView(state, step.prompt, step.success);
   if (step.kind === "post") return postView(state, step.prompt);
   if (step.kind === "patch") return patchView(state, step.prompt);
   if (step.kind === "remove") return removeView(state, step.prompt);
   if (step.kind === "probe") return probeView(state, step.prompt);
-  return chooseView(state, step.prompt, step.options);
+  return chooseView(state, step.art, step.prompt, step.options);
 }
 
-function card(lines: string[], button: string): string {
-  return `<div class="card">${lines.map((line) => `<p>${escape(line)}</p>`).join("")}
-    <button type="button" class="go" data-act="next">${escape(button)}</button>
+function slideCount(state: State): string {
+  const steps = LEVELS[state.level]?.steps ?? [];
+  const cards = steps.map((step, index) => (step.kind === "card" ? index : -1)).filter((index) => index >= 0);
+  const at = cards.indexOf(state.beat);
+  return at < 0 ? "" : `${at + 1} / ${cards.length}`;
+}
+
+function card(step: Slide, count: string, gate: number | null): string {
+  const tone = step.tone ? ` tone-${step.tone}` : "";
+  const label = step.button ?? "Next";
+  return `<div class="slide${tone}">
+    <div class="slide-top">
+      ${step.tag ? `<p class="tag">${escape(step.tag)}</p>` : "<span></span>"}
+      ${count ? `<p class="count-slides">${escape(count)}</p>` : ""}
+    </div>
+    <div class="art" aria-hidden="true">${escape(step.art)}</div>
+    <h2 class="term">${escape(step.term)}</h2>
+    <p class="def">${escape(step.text)}</p>
+    ${step.example ? `<p class="example"><code>${escape(step.example)}</code></p>` : ""}
+    <div class="slide-foot">
+      ${gate === null ? "" : gateView(step.term, gate)}
+      <button type="button" class="go" data-act="next" ${gate === null ? "" : "disabled"}>${escape(label)}</button>
+    </div>
+  </div>`;
+}
+
+function gateView(seed: string, elapsed: number): string {
+  let hash = 0;
+  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  const word = GATE_WORDS[hash % GATE_WORDS.length] ?? GATE_WORDS[0];
+  const step = GATE_MS / GATE_PANES;
+  const panes = Array.from({ length: GATE_PANES }, (_, index) => `<i style="animation-delay:${(index + 1) * step - elapsed}ms"></i>`).join("");
+  return `<div class="gate" role="status" aria-label="Next unlocks in a few seconds">
+    <span class="gate-panes">${panes}</span>
+    <span class="gate-word">${escape(word ?? "")}</span>
   </div>`;
 }
 
@@ -85,7 +122,7 @@ function binView(bin: Bin, items: SortItem[], placed: Placed[]): string {
     .map((entry) => items.find((item) => item.id === entry.id)?.label ?? "")
     .filter(Boolean);
   return `<button type="button" class="bin bin-${escape(bin.id)}" data-act="zone" data-zone="${escape(bin.id)}">
-    <b>${escape(bin.label)}</b>
+    <b>${bin.icon ? `<span class="bin-icon" aria-hidden="true">${escape(bin.icon)}</span> ` : ""}${escape(bin.label)}</b>
     <span>${inside.map((label) => `<em>${escape(label)}</em>`).join("")}</span>
   </button>`;
 }
@@ -150,29 +187,32 @@ function probeView(state: State, prompt: string): string {
     ${next("Match the codes", ready)}`;
 }
 
-function chooseView(state: State, prompt: string, options: { id: string; label: string; ok: boolean }[]): string {
-  return `<h2>${escape(prompt)}</h2>
+function chooseView(state: State, art: string, prompt: string, options: { id: string; label: string; ok: boolean }[]): string {
+  return `<div class="art small" aria-hidden="true">${escape(art)}</div>
+    <h2>${escape(prompt)}</h2>
     ${banner(state)}
     <div class="methods">
       ${options.map((option) => {
         const cls = ["verb", option.id.toLowerCase(), state.badId === option.id ? "bad" : "", state.chose && option.ok ? "picked" : ""].filter(Boolean).join(" ");
-        return `<button type="button" class="${cls}" data-act="choose" data-id="${escape(option.id)}" ${state.chose || state.busy ? "disabled" : ""}>${escape(option.label)}</button>`;
+        const icon = VERB_ICONS[option.id] ? `${VERB_ICONS[option.id]} ` : "";
+        return `<button type="button" class="${cls}" data-act="choose" data-id="${escape(option.id)}" ${state.chose || state.busy ? "disabled" : ""}>${escape(icon + option.label)}</button>`;
       }).join("")}
     </div>
     ${next("Next", state.chose)}`;
 }
 
 function doneView(): string {
-  return `<div class="card done">
-    <p>You sent real requests to a real API.</p>
+  return `<div class="slide done">
+    <div class="art" aria-hidden="true">🎉 🪟</div>
+    <h2 class="term">You sent real requests to a real API.</h2>
     <ul class="recap-verbs">
-      <li><b>GET</b> looks.</li>
-      <li><b>POST</b> adds.</li>
-      <li><b>PUT</b> replaces the whole thing.</li>
-      <li><b>PATCH</b> changes a little.</li>
-      <li><b>DELETE</b> removes.</li>
+      <li><span aria-hidden="true">${VERB_ICONS.GET}</span><b class="get">GET</b> looks.</li>
+      <li><span aria-hidden="true">${VERB_ICONS.POST}</span><b class="post">POST</b> adds.</li>
+      <li><span aria-hidden="true">${VERB_ICONS.PUT}</span><b class="put">PUT</b> replaces the whole thing.</li>
+      <li><span aria-hidden="true">${VERB_ICONS.PATCH}</span><b class="patch">PATCH</b> changes a little.</li>
+      <li><span aria-hidden="true">${VERB_ICONS.DELETE}</span><b class="delete">DELETE</b> removes.</li>
     </ul>
-    <p>That is how apps share work, without sharing the whole room.</p>
+    <p class="def">That is how apps share work, without sharing the whole room.</p>
   </div>`;
 }
 

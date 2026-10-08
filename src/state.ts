@@ -2,7 +2,7 @@ import type { Exchange } from "./api";
 import { LEVELS, type Step } from "./lesson";
 import type { Note, Placed } from "./rules";
 
-const PROGRESS = "the-window-v1";
+const PROGRESS = "the-window-v2";
 const MINE = "the-window-mine";
 
 export interface Seen {

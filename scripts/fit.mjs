@@ -1,6 +1,6 @@
 import puppeteer from "puppeteer-core";
 
-const counts = [5, 4, 2, 2, 2, 2, 2, 4, 4];
+const counts = [10, 8, 3, 4, 6, 4, 3, 8, 5];
 const exchange = {
   method: "POST",
   url: "https://store.zapier.com/api/records?secret=••••",
@@ -66,13 +66,13 @@ for (let level = 0; level < counts.length; level += 1) {
     }
   }
 }
-screens.push({ id: "get-done", saved: base({ level: 2, beat: 1, gets: 2, success: "You looked twice. The notes stayed put." }), mine: ["win-n-aaaabbbb"] });
-screens.push({ id: "post-done", saved: base({ level: 3, beat: 1, posted: true, success: "Your note is on a computer that is not this one." }), mine: ["win-n-aaaabbbb"] });
-screens.push({ id: "probe-done", saved: base({ level: 7, beat: 2, seen: { empty: true, address: true, body: true }, success: "You have all three answers." }), mine: [] });
-screens.push({ id: "choose-done", saved: base({ level: 8, beat: 1, chose: true, success: "GET. The app looks up the forecast and leaves it as it was." }), mine: [] });
-screens.push({ id: "done", saved: base({ phase: "done", level: 8, beat: 3 }), mine: [] });
-screens.push({ id: "confirm", saved: base({ level: 4, beat: 1 }), mine: [], confirm: true });
-screens.push({ id: "teacher-sort", saved: base({ level: 4, beat: 1 }), mine: [], teacher: true });
+screens.push({ id: "get-done", saved: base({ level: 2, beat: 2, gets: 2, success: "You looked twice. The notes stayed put." }), mine: ["win-n-aaaabbbb"] });
+screens.push({ id: "post-done", saved: base({ level: 3, beat: 3, posted: true, success: "Your note is on a computer that is not this one." }), mine: ["win-n-aaaabbbb"] });
+screens.push({ id: "probe-done", saved: base({ level: 7, beat: 6, seen: { empty: true, address: true, body: true }, success: "You have all three answers." }), mine: [] });
+screens.push({ id: "choose-done", saved: base({ level: 8, beat: 2, chose: true, success: "GET. The app looks up the forecast and leaves it as it was." }), mine: [] });
+screens.push({ id: "done", saved: base({ phase: "done", level: 8, beat: 4 }), mine: [] });
+screens.push({ id: "confirm", saved: base({ level: 4, beat: 5 }), mine: [], confirm: true });
+screens.push({ id: "teacher-sort", saved: base({ level: 4, beat: 5 }), mine: [], teacher: true });
 
 const browser = await puppeteer.launch({
   executablePath: process.env.CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -142,7 +142,7 @@ try {
       const query = screen.teacher ? "?teacher=1" : "";
       await page.goto(`http://127.0.0.1:5174/${query}`, { waitUntil: "domcontentloaded" });
       await page.evaluate((payload) => {
-        localStorage.setItem("the-window-v1", JSON.stringify(payload.saved));
+        localStorage.setItem("the-window-v2", JSON.stringify(payload.saved));
         localStorage.setItem("the-window-zoom", String(payload.zoom));
         localStorage.setItem("the-window-mine", JSON.stringify(payload.mine));
       }, { saved: screen.saved, zoom, mine: screen.mine });

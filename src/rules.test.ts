@@ -71,7 +71,7 @@ for (const level of LEVELS) {
       for (const item of step.items) assert.ok(bins.has(item.bin), item.id);
     }
     if (step.kind === "choose") assert.equal(step.options.filter((option) => option.ok).length, 1);
-    if (step.kind === "card") assert.ok(step.lines.every((line) => !line.includes("—")));
+    if (step.kind === "card") assert.ok([step.term, step.text, step.example ?? ""].every((line) => !line.includes("—")));
   }
 }
 
