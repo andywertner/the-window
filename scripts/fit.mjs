@@ -75,7 +75,7 @@ screens.push({ id: "confirm", saved: base({ level: 4, beat: 1 }), mine: [], conf
 screens.push({ id: "teacher-sort", saved: base({ level: 4, beat: 1 }), mine: [], teacher: true });
 
 const browser = await puppeteer.launch({
-  executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  executablePath: process.env.CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   headless: true,
   args: ["--no-sandbox"],
 });
