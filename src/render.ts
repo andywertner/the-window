@@ -24,6 +24,7 @@ function nameScreen(state: State): string {
 function shell(state: State, teacher: boolean, main: string): string {
   const title = state.phase === "done" ? "You did it" : LEVELS[state.level]?.title ?? "";
   const part = state.phase === "done" ? PART_COUNT : state.level + 1;
+  const solo = state.phase === "done" || currentStep(state)?.kind === "card";
   return `<header>
       <div class="titles">
         <h1>The Window</h1>
@@ -33,7 +34,7 @@ function shell(state: State, teacher: boolean, main: string): string {
       <div class="pips" aria-hidden="true">${LEVELS.map((_, index) => `<i class="${pipClass(state, index)}"></i>`).join("")}</div>
     </header>
     <div class="stage">
-      <section class="lesson">${main}</section>
+      <section class="lesson${solo ? " solo" : ""}">${main}</section>
       ${panel(state)}
     </div>`;
 }
@@ -61,11 +62,14 @@ function sortView(state: State, step: Extract<Step, { kind: "sort" }>): string {
   const done = sortDone(step.items, state.placed);
   const long = step.items.some((item) => item.label.length > 24);
   const unplaced = step.items.filter((item) => !state.placed.some((placed) => placed.id === item.id));
+  const wide = step.bins.length >= 5;
   return `<h2>${escape(step.prompt)}</h2>
     ${banner(state)}
     ${step.recap ? `<p class="recap">You saw 200, 404, and 400.</p>` : ""}
-    <div class="pile${long ? " long" : ""}">${unplaced.map((item) => slip(item, state)).join("") || `<p class="empty">Every slip is in a bin.</p>`}</div>
-    <div class="bins" data-n="${step.bins.length}">${step.bins.map((bin) => binView(bin, step.items, state.placed)).join("")}</div>
+    <div class="sort-body${wide ? " wide" : ""}">
+      <div class="pile${long ? " long" : ""}">${unplaced.map((item) => slip(item, state)).join("") || `<p class="empty">Every slip is in a bin.</p>`}</div>
+      <div class="bins fit" data-n="${step.bins.length}">${step.bins.map((bin) => binView(bin, step.items, state.placed)).join("")}</div>
+    </div>
     ${done ? "" : `<p class="hint">${escape(step.hint)}</p>`}
     ${next("Next", done)}`;
 }
@@ -138,11 +142,11 @@ function probeView(state: State, prompt: string): string {
       ${check("Bad address", state.seen.address, "404")}
       ${check("Broken body", state.seen.body, "400")}
     </ul>
-    <div class="methods stack">
+    ${ready ? "" : `<div class="methods stack">
       ${probeButton("empty", "Look in an empty locker", state)}
       ${probeButton("address", "Open a bad address", state)}
       ${probeButton("body", "Send a broken body", state)}
-    </div>
+    </div>`}
     ${next("Match the codes", ready)}`;
 }
 
@@ -196,8 +200,8 @@ function panel(state: State): string {
 }
 
 function board(state: State): string {
-  if (state.board.length === 0) return `<p class="empty">The board shows up here after you reach the window.</p>`;
-  return `<ul class="board">${state.board.map((note) => noteView(note, state.mine.includes(note.key))).join("")}</ul>`;
+  if (state.board.length === 0) return `<p class="empty fit">The board shows up here after you reach the window.</p>`;
+  return `<ul class="board fit">${state.board.map((note) => noteView(note, state.mine.includes(note.key))).join("")}</ul>`;
 }
 
 function noteView(note: Note, mine: boolean): string {
