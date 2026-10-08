@@ -234,7 +234,7 @@ function doneView(): string {
 
 function playView(state: State): string {
   return `<h2>The class board is yours.</h2>
-    <p class="hint">POST a note. GET refreshes the board. PATCH adds a like. DELETE takes down your notes.</p>
+    <p class="hint">POST, PATCH, and DELETE do not change this board. Press GET to pull the latest notes.</p>
     ${banner(state)}
     <p class="signed">Signed as ${escape(state.name)}</p>
     <textarea id="note" maxlength="80" placeholder="A new note for the class." ${state.busy ? "disabled" : ""}>${escape(state.note)}</textarea>
@@ -273,7 +273,7 @@ function panel(state: State): string {
 function board(state: State, play = false): string {
   const notes =
     state.board.length === 0
-      ? `<p class="empty">The notes show up here after the first GET.</p>`
+      ? `<p class="empty">${play ? "Press GET to pull the latest notes." : "The notes show up here after the first GET."}</p>`
       : `<ul class="board">${state.board.map((note) => noteView(note, state.mine.includes(note.key), play, state.busy)).join("")}</ul>`;
   return `<section class="boardbox fit" aria-label="Class board">
     <div class="boardbox-bar"><span aria-hidden="true">📋</span> ${play ? "Frontend" : "Class board"} <em>${play ? "The class board" : "What the app shows you"}</em></div>

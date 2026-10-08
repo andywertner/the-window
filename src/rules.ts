@@ -69,6 +69,7 @@ export interface Note {
   text: string;
   welcome: boolean;
   likes: number;
+  at: number;
 }
 
 export function likeKey(key: string, notePrefix: string, likePrefix: string, welcomeKey: string): string | null {
@@ -78,23 +79,33 @@ export function likeKey(key: string, notePrefix: string, likePrefix: string, wel
   return id ? `${likePrefix}${id}` : null;
 }
 
-export function notesFrom(data: unknown, prefix: string, welcomeKey: string, likePrefix = "win-k-"): Note[] {
+export function notesFrom(data: unknown, prefix: string, welcomeKey: string, likePrefix = "win-k-", order: "name" | "time" = "name"): Note[] {
   const record = asRecord(data);
   if (!record) return [];
   const notes: Note[] = [];
   for (const [key, value] of Object.entries(record)) {
     if (key === welcomeKey && typeof value === "string") {
-      notes.push({ key, name: "", text: value, welcome: true, likes: likesOn(record, key, prefix, likePrefix, welcomeKey) });
+      notes.push({ key, name: "", text: value, welcome: true, likes: likesOn(record, key, prefix, likePrefix, welcomeKey), at: 0 });
       continue;
     }
     if (!key.startsWith(prefix) || !value || typeof value !== "object" || Array.isArray(value)) continue;
     const name = (value as { name?: unknown }).name;
     const text = (value as { text?: unknown }).text;
     if (typeof name !== "string" || typeof text !== "string") continue;
-    notes.push({ key, name, text, welcome: false, likes: likesOn(record, key, prefix, likePrefix, welcomeKey) });
+    notes.push({ key, name, text, welcome: false, likes: likesOn(record, key, prefix, likePrefix, welcomeKey), at: postedAt(value) });
   }
-  notes.sort((a, b) => Number(b.welcome) - Number(a.welcome) || a.name.localeCompare(b.name) || a.key.localeCompare(b.key));
+  notes.sort((a, b) => {
+    if (a.welcome !== b.welcome) return Number(b.welcome) - Number(a.welcome);
+    if (order === "time") return a.at - b.at || a.key.localeCompare(b.key);
+    return a.name.localeCompare(b.name) || a.key.localeCompare(b.key);
+  });
   return notes;
+}
+
+function postedAt(value: unknown): number {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return 0;
+  const at = (value as { at?: unknown }).at;
+  return typeof at === "number" && Number.isFinite(at) ? at : 0;
 }
 
 function likesOn(record: Record<string, unknown>, key: string, notePrefix: string, likePrefix: string, welcomeKey: string): number {

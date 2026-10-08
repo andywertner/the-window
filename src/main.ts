@@ -14,6 +14,7 @@ let state: State = load();
 let ticket = 0;
 let zoom = 1;
 let boardDirty = false;
+let scrollBoard = false;
 let gateKey = "";
 let gateStart = 0;
 let gateTimer = 0;
@@ -45,6 +46,12 @@ function draw(): void {
     if (field) {
       field.focus();
       field.setSelectionRange(caret, caret);
+    }
+  }
+  if (scrollBoard) {
+    scrollBoard = false;
+    for (const node of document.querySelectorAll(".lesson, .board, .boardbox")) {
+      if (node instanceof HTMLElement) node.scrollTop = node.scrollHeight;
     }
   }
 }
@@ -105,7 +112,7 @@ function afterEnter(): void {
 }
 
 function applyBoard(data: unknown): void {
-  state.board = notesFrom(data, NOTE_PREFIX, WELCOME_KEY, LIKE_PREFIX);
+  state.board = notesFrom(data, NOTE_PREFIX, WELCOME_KEY, LIKE_PREFIX, state.phase === "play" ? "time" : "name");
   state.fives = fivesFrom(data, FIVES_KEY);
   const live = new Set(state.board.map((note) => note.key));
   state.mine = state.mine.filter((key) => live.has(key));
@@ -114,14 +121,15 @@ function applyBoard(data: unknown): void {
 async function refreshQuiet(): Promise<void> {
   const id = ticket;
   try {
+    const stopped = () => id !== ticket || state.phase === "play";
     const got = await getAll();
-    if (id !== ticket) return;
+    if (stopped()) return;
     const data = asRecord(got.json);
     if (!data || typeof data[WELCOME_KEY] !== "string") {
       await postRecords({ [WELCOME_KEY]: WELCOME_TEXT });
-      if (id !== ticket) return;
+      if (stopped()) return;
       const again = await getAll();
-      if (id !== ticket) return;
+      if (stopped()) return;
       applyBoard(again.json);
     } else {
       applyBoard(got.json);
@@ -335,7 +343,7 @@ async function onPlayPost(): Promise<void> {
   await run(async (id) => {
     const key = noteKey(NOTE_PREFIX);
     const likes = likeKey(key, NOTE_PREFIX, LIKE_PREFIX, WELCOME_KEY);
-    const posted = await postRecords({ [key]: { name: state.name, text: note }, ...(likes ? { [likes]: 0 } : {}) });
+    const posted = await postRecords({ [key]: { name: state.name, text: note, at: Date.now() }, ...(likes ? { [likes]: 0 } : {}) });
     if (id !== ticket) return;
     state.exchange = posted.exchange;
     if (posted.status >= 400) {
@@ -343,11 +351,8 @@ async function onPlayPost(): Promise<void> {
       return;
     }
     state.mine = state.mine.concat(key);
-    const got = await getAll();
-    if (id !== ticket) return;
-    applyBoard(got.json);
     state.note = "";
-    state.success = "POST added your note. GET again to see what classmates added.";
+    state.success = "POST sent the note. The board stays the same until you GET.";
   });
 }
 
@@ -358,7 +363,8 @@ async function onPlayGet(): Promise<void> {
     if (id !== ticket) return;
     state.exchange = got.exchange;
     applyBoard(got.json);
-    state.success = "GET read the board and left every note as it was.";
+    scrollBoard = true;
+    state.success = "GET pulled the latest notes. The board is up to date.";
   });
 }
 
@@ -384,10 +390,7 @@ async function onPlayDelete(): Promise<void> {
       if (id !== ticket) return;
     }
     state.exchange = last.exchange;
-    const got = await getAll();
-    if (id !== ticket) return;
-    applyBoard(got.json);
-    state.success = "DELETE took your notes down. The rest of the board is still there.";
+    state.success = "DELETE sent. Those notes stay on the board until you GET.";
   });
 }
 
@@ -409,10 +412,7 @@ async function onPlayLike(noteKeyValue: string): Promise<void> {
       state.wrong = "The window answered, and the like did not change.";
       return;
     }
-    const got = await getAll();
-    if (id !== ticket) return;
-    applyBoard(got.json);
-    state.success = "PATCH added 1 like.";
+    state.success = "PATCH sent 1 like. The count stays the same until you GET.";
   });
 }
 
@@ -441,8 +441,10 @@ function enterPlay(): void {
   state.phase = "play";
   state.wrong = null;
   state.success = null;
+  state.board = [];
+  state.exchange = null;
+  ticket += 1;
   draw();
-  void refreshQuiet();
 }
 
 async function onClear(): Promise<void> {
