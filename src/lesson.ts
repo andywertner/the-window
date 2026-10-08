@@ -1,6 +1,6 @@
 import type { Bin, Choice, SortItem } from "./rules";
 
-export type Tone = "get" | "post" | "put" | "patch" | "delete" | "ok" | "bad";
+export type Tone = "get" | "post" | "patch" | "delete" | "ok" | "bad";
 
 export interface Slide {
   kind: "card";
@@ -31,7 +31,6 @@ export interface Level {
 export const VERB_ICONS: Record<string, string> = {
   GET: "👀",
   POST: "📌",
-  PUT: "🔁",
   PATCH: "🩹",
   DELETE: "🗑️",
 };
@@ -122,7 +121,7 @@ export const LEVELS: Level[] = [
   {
     title: "GET",
     steps: [
-      slide(VERB_ICONS.GET, "GET", "Means look. It reads what is in a locker.", { tag: "Verb 1 of 5", tone: "get", example: "GET /api/records" }),
+      slide(VERB_ICONS.GET, "GET", "Means look. It reads what is in a locker.", { tag: "Verb 1 of 4", tone: "get", example: "GET /api/records" }),
       slide("📋 👀", "Like a bulletin board", "Read it once or a hundred times. Nothing on the board changes.", { tone: "get", button: "Try a GET" }),
       {
         kind: "get",
@@ -134,7 +133,7 @@ export const LEVELS: Level[] = [
   {
     title: "POST",
     steps: [
-      slide(VERB_ICONS.POST, "POST", "Means add something new.", { tag: "Verb 2 of 5", tone: "post", example: "POST /api/records" }),
+      slide(VERB_ICONS.POST, "POST", "Means add something new.", { tag: "Verb 2 of 4", tone: "post", example: "POST /api/records" }),
       slide("📦", "Body", "The stuff you send along with a request. For POST, the body is the new thing you are adding.", {
         tag: "New word",
         tone: "post",
@@ -152,39 +151,32 @@ export const LEVELS: Level[] = [
     ],
   },
   {
-    title: "Five verbs",
+    title: "Four verbs",
     steps: [
-      slide(VERB_ICONS.PUT, "PUT", "Replaces the whole thing. The old version is gone and the new one takes its place.", {
-        tag: "Verb 3 of 5",
-        tone: "put",
-        example: "Swap in a whole new lunch menu",
-      }),
-      slide(VERB_ICONS.PATCH, "PATCH", "Changes one small part and leaves the rest alone.", {
-        tag: "Verb 4 of 5",
+      slide(VERB_ICONS.PATCH, "PATCH", "Changes something that is already there. It does not add a new thing.", {
+        tag: "Verb 3 of 4",
         tone: "patch",
         example: "Pizza count: 12 → 13",
       }),
-      slide("🔁  or  🩹", "PUT or PATCH?", "A whole new poster is PUT. Fixing one word on the poster is PATCH."),
-      slide(VERB_ICONS.DELETE, "DELETE", "Removes something.", { tag: "Verb 5 of 5", tone: "delete", example: "Take your name off a list" }),
-      slide("👀 📌 🔁 🩹 🗑️", "All five", "Look, add, replace, change a little, remove. Almost every request uses one of these.", {
+      slide("📌  or  🩹", "POST or PATCH?", "POST adds something new, like a name on the sign-up. PATCH changes something already there, like the pizza count."),
+      slide(VERB_ICONS.DELETE, "DELETE", "Removes something.", { tag: "Verb 4 of 4", tone: "delete", example: "Take your name off a list" }),
+      slide("👀 📌 🩹 🗑️", "All four", "Look, add, change a little, remove. These four verbs cover the requests in this lesson.", {
         button: "Sort them",
       }),
       {
         kind: "sort",
         prompt: "Which verb does each job?",
         hint: "Tap a job, then tap its verb.",
-        success: "Five verbs cover almost every request you will meet.",
+        success: "GET looks, POST adds, PATCH changes a little, and DELETE removes.",
         bins: [
           { id: "GET", label: "GET", icon: VERB_ICONS.GET },
           { id: "POST", label: "POST", icon: VERB_ICONS.POST },
-          { id: "PUT", label: "PUT", icon: VERB_ICONS.PUT },
           { id: "PATCH", label: "PATCH", icon: VERB_ICONS.PATCH },
           { id: "DELETE", label: "DELETE", icon: VERB_ICONS.DELETE },
         ],
         items: [
           { id: "menu", label: "Check today's lunch menu", bin: "GET", wrong: "Checking the menu is a look. That is GET." },
           { id: "signup", label: "Add your name to the pizza sign-up", bin: "POST", wrong: "Adding your name is new. That is POST." },
-          { id: "replace", label: "Replace the whole lunch menu", bin: "PUT", wrong: "Replacing the whole menu is PUT." },
           { id: "count", label: "Change the pizza count from 12 to 13", bin: "PATCH", wrong: "Changing one number is PATCH." },
           { id: "off", label: "Take your name off the sign-up", bin: "DELETE", wrong: "Taking your name off is DELETE." },
         ],

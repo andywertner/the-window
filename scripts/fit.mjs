@@ -1,6 +1,6 @@
 import puppeteer from "puppeteer-core";
 
-const counts = [11, 8, 3, 4, 6, 4, 3, 8, 5];
+const counts = [11, 8, 3, 4, 5, 4, 3, 8, 5];
 const exchange = {
   method: "POST",
   url: "https://store.zapier.com/api/records?secret=••••",
@@ -20,7 +20,6 @@ const full = {
   4: [
     { id: "menu", bin: "GET" },
     { id: "signup", bin: "POST" },
-    { id: "replace", bin: "PUT" },
     { id: "count", bin: "PATCH" },
     { id: "off", bin: "DELETE" },
   ],
@@ -71,8 +70,8 @@ screens.push({ id: "post-done", saved: base({ level: 3, beat: 3, posted: true, s
 screens.push({ id: "probe-done", saved: base({ level: 7, beat: 6, seen: { empty: true, address: true, body: true }, success: "You have all three answers." }), mine: [] });
 screens.push({ id: "choose-done", saved: base({ level: 8, beat: 2, chose: true, success: "GET. The app looks up the forecast and leaves it as it was." }), mine: [] });
 screens.push({ id: "done", saved: base({ phase: "done", level: 8, beat: 4 }), mine: [] });
-screens.push({ id: "confirm", saved: base({ level: 4, beat: 5 }), mine: [], confirm: true });
-screens.push({ id: "teacher-sort", saved: base({ level: 4, beat: 5 }), mine: [], teacher: true });
+screens.push({ id: "confirm", saved: base({ level: 4, beat: 4 }), mine: [], confirm: true });
+screens.push({ id: "teacher-sort", saved: base({ level: 4, beat: 4 }), mine: [], teacher: true });
 
 const browser = await puppeteer.launch({
   executablePath: process.env.CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -142,7 +141,7 @@ try {
       const query = screen.teacher ? "?teacher=1" : "";
       await page.goto(`http://127.0.0.1:5174/${query}`, { waitUntil: "domcontentloaded" });
       await page.evaluate((payload) => {
-        localStorage.setItem("the-window-v2", JSON.stringify(payload.saved));
+        localStorage.setItem("the-window-v3", JSON.stringify(payload.saved));
         localStorage.setItem("the-window-zoom", String(payload.zoom));
         localStorage.setItem("the-window-mine", JSON.stringify(payload.mine));
       }, { saved: screen.saved, zoom, mine: screen.mine });

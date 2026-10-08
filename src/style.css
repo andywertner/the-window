@@ -7,7 +7,6 @@
   --gold: #f0c14d;
   --get: #2f6d4f;
   --post: #1f4e79;
-  --put: #6b3fa0;
   --patch: #a35b00;
   --delete: #a33b32;
   --muted: #526070;
@@ -132,7 +131,6 @@ header {
 }
 .slide.tone-get { --tone: var(--get); }
 .slide.tone-post { --tone: var(--post); }
-.slide.tone-put { --tone: var(--put); }
 .slide.tone-patch { --tone: var(--patch); }
 .slide.tone-delete, .slide.tone-bad { --tone: var(--delete); }
 .slide.tone-ok { --tone: var(--get); }
@@ -211,7 +209,6 @@ header {
 .recap-verbs b { display: inline-block; min-width: 5.2rem; }
 .recap-verbs b.get { color: var(--get); }
 .recap-verbs b.post { color: var(--post); }
-.recap-verbs b.put { color: var(--put); }
 .recap-verbs b.patch { color: var(--patch); }
 .recap-verbs b.delete { color: var(--delete); }
 
@@ -288,7 +285,6 @@ textarea { width: 100%; min-height: 52px; max-height: 72px; resize: none; flex: 
 }
 .verb.get, .method.get { background: var(--get); color: #fff; }
 .verb.post, .method.post { background: var(--post); color: #fff; }
-.verb.put { background: var(--put); color: #fff; }
 .verb.patch { background: var(--patch); color: #fff; }
 .verb.delete, .method.delete { background: var(--delete); color: #fff; }
 .verb.picked, .quiet-btn.picked { box-shadow: inset 0 0 0 4px var(--gold), 3px 3px 0 var(--ink); }
@@ -322,6 +318,7 @@ textarea { width: 100%; min-height: 52px; max-height: 72px; resize: none; flex: 
 .sort-body.wide .bins { overflow: auto; }
 .bins[data-n="2"] { grid-template-columns: 1fr 1fr; }
 .bins[data-n="3"] { grid-template-columns: 1fr 1fr 1fr; }
+.bins[data-n="4"] { grid-template-columns: 1fr 1fr; }
 .bins[data-n="5"] { grid-template-columns: 1fr; }
 .bin {
   min-height: 0;
@@ -337,7 +334,6 @@ textarea { width: 100%; min-height: 52px; max-height: 72px; resize: none; flex: 
 .bin b { font-size: 1rem; }
 .bin-GET b { color: var(--get); }
 .bin-POST b { color: var(--post); }
-.bin-PUT b { color: var(--put); }
 .bin-PATCH b { color: var(--patch); }
 .bin-DELETE b { color: var(--delete); }
 .bin span { display: flex; flex-wrap: wrap; gap: 4px; }

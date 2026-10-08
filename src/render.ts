@@ -219,7 +219,6 @@ function doneView(): string {
     <ul class="recap-verbs">
       <li><span aria-hidden="true">${VERB_ICONS.GET}</span><b class="get">GET</b> looks.</li>
       <li><span aria-hidden="true">${VERB_ICONS.POST}</span><b class="post">POST</b> adds.</li>
-      <li><span aria-hidden="true">${VERB_ICONS.PUT}</span><b class="put">PUT</b> replaces the whole thing.</li>
       <li><span aria-hidden="true">${VERB_ICONS.PATCH}</span><b class="patch">PATCH</b> changes a little.</li>
       <li><span aria-hidden="true">${VERB_ICONS.DELETE}</span><b class="delete">DELETE</b> removes.</li>
     </ul>

@@ -120,12 +120,11 @@ try {
   const verbs = [
     ["menu", "GET"],
     ["signup", "POST"],
-    ["replace", "PUT"],
     ["count", "PATCH"],
     ["off", "DELETE"],
   ];
   for (const [item, zone] of verbs) await place(item, zone);
-  await waitText("Five verbs");
+  await waitText("GET looks, POST adds");
   await shot("07-verbs");
   await click("[data-act=next]");
   await click("[data-act=next]");
