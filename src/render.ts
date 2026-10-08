@@ -8,7 +8,9 @@ const GATE_WORDS = ["Soaking it in…", "Brain loading…", "Let it sink in…",
 
 export function render(state: State, teacher: boolean, gate: number | null): string {
   const page =
-    state.phase === "name" ? nameScreen(state, teacher) : shell(state, state.phase === "done" ? doneView() : stepView(state, gate));
+    state.phase === "name"
+      ? nameScreen(state, teacher)
+      : shell(state, state.phase === "done" ? doneView() : state.phase === "play" ? playView(state) : stepView(state, gate));
   return page + overlay(state);
 }
 
@@ -29,17 +31,19 @@ function nameScreen(state: State, teacher: boolean): string {
 }
 
 function shell(state: State, main: string): string {
-  const title = state.phase === "done" ? "You did it" : LEVELS[state.level]?.title ?? "";
-  const part = state.phase === "done" ? PART_COUNT : state.level + 1;
-  const solo = state.phase === "done" || currentStep(state)?.kind === "card";
+  const playing = state.phase === "play";
+  const title = state.phase === "done" ? "You did it" : playing ? "Free play" : LEVELS[state.level]?.title ?? "";
+  const part = state.phase === "done" || playing ? PART_COUNT : state.level + 1;
+  const solo = !playing && (state.phase === "done" || currentStep(state)?.kind === "card");
+  const partLine = playing ? "Free play" : `Part ${part} of ${PART_COUNT} · ${title}`;
   return `<header>
       <div class="titles">
         <h1>The Window</h1>
-        <p class="part">Part ${part} of ${PART_COUNT} · ${escape(title)}</p>
+        <p class="part">${escape(partLine)}</p>
       </div>
       <div class="pips" aria-hidden="true">${LEVELS.map((_, index) => `<i class="${pipClass(state, index)}"></i>`).join("")}</div>
     </header>
-    <div class="stage${solo ? " solo" : ""}">
+    <div class="stage${playing ? " play" : ""}${solo ? " solo" : ""}">
       <section class="lesson${solo ? " solo" : ""}">${main}</section>
       ${solo ? "" : panel(state)}
     </div>`;
@@ -224,7 +228,23 @@ function doneView(): string {
       <li><span aria-hidden="true">${VERB_ICONS.DELETE}</span><b class="delete">DELETE</b> removes.</li>
     </ul>
     <p class="def">That is how apps share work, without sharing the whole room.</p>
+    <button type="button" class="go" data-act="play">Free play</button>
   </div>`;
+}
+
+function playView(state: State): string {
+  return `<h2>The class board is yours.</h2>
+    <p class="hint">POST a note. GET refreshes the board. PATCH adds a like. DELETE takes down your notes.</p>
+    ${banner(state)}
+    <p class="signed">Signed as ${escape(state.name)}</p>
+    <textarea id="note" maxlength="80" placeholder="A new note for the class." ${state.busy ? "disabled" : ""}>${escape(state.note)}</textarea>
+    <p class="count" id="count">${cleanNote(state.note).length}/80</p>
+    <div class="methods">
+      <button type="button" class="verb post" data-act="play-post" ${state.busy ? "disabled" : ""}>${VERB_ICONS.POST} POST</button>
+      <button type="button" class="verb get" data-act="play-get" ${state.busy ? "disabled" : ""}>${VERB_ICONS.GET} GET</button>
+      <button type="button" class="verb delete" data-act="play-delete" ${state.busy ? "disabled" : ""}>${VERB_ICONS.DELETE} DELETE</button>
+    </div>
+    ${board(state, true)}`;
 }
 
 function panel(state: State): string {
@@ -241,7 +261,7 @@ function panel(state: State): string {
       <p class="hint">${escape(statusHint(exchange.status))}</p>
       <pre>${escape(exchange.response)}</pre>`;
   return `<aside class="window" aria-live="polite">
-    <div class="window-bar"><i></i><i></i><i></i><span>🪟 The window</span><em>The raw request and response</em></div>
+    <div class="window-bar"><i></i><i></i><i></i><span>${state.phase === "play" ? "Backend log" : "🪟 The window"}</span><em>${state.phase === "play" ? "What was sent" : "The raw request and response"}</em></div>
     <div class="pane">
       ${state.busy ? `<p class="wait">Waiting for the window…</p>` : ""}
       ${state.bootError ? `<p class="banner bad">${escape(state.bootError)}</p>` : ""}
@@ -250,21 +270,24 @@ function panel(state: State): string {
   </aside>`;
 }
 
-function board(state: State): string {
+function board(state: State, play = false): string {
   const notes =
     state.board.length === 0
       ? `<p class="empty">The notes show up here after the first GET.</p>`
-      : `<ul class="board">${state.board.map((note) => noteView(note, state.mine.includes(note.key))).join("")}</ul>`;
+      : `<ul class="board">${state.board.map((note) => noteView(note, state.mine.includes(note.key), play, state.busy)).join("")}</ul>`;
   return `<section class="boardbox fit" aria-label="Class board">
-    <div class="boardbox-bar"><span aria-hidden="true">📋</span> Class board <em>What the app shows you</em></div>
+    <div class="boardbox-bar"><span aria-hidden="true">📋</span> ${play ? "Frontend" : "Class board"} <em>${play ? "The class board" : "What the app shows you"}</em></div>
     ${notes}
   </section>`;
 }
 
-function noteView(note: Note, mine: boolean): string {
-  const cls = note.welcome ? "welcome" : mine ? "mine" : "";
+function noteView(note: Note, mine: boolean, play: boolean, busy: boolean): string {
+  const cls = [note.welcome ? "welcome" : mine ? "mine" : "", play ? "play-note" : ""].filter(Boolean).join(" ");
   const who = note.welcome ? "Already here" : escape(note.name);
-  return `<li class="${cls}"><b>${who}</b><span>${escape(note.text)}</span></li>`;
+  const like = play
+    ? `<button type="button" class="like verb patch" data-act="play-like" data-key="${escape(note.key)}" ${busy ? "disabled" : ""}>${VERB_ICONS.PATCH} PATCH ${note.likes}</button>`
+    : "";
+  return `<li class="${cls}"><b>${who}</b><span>${escape(note.text)}</span>${like}</li>`;
 }
 
 function banner(state: State): string {
@@ -297,7 +320,7 @@ function check(label: string, on: boolean, code: string): string {
 }
 
 function pipClass(state: State, index: number): string {
-  if (state.phase === "done" || index < state.level) return "done";
+  if (state.phase === "done" || state.phase === "play" || index < state.level) return "done";
   if (index === state.level) return "now";
   return "";
 }

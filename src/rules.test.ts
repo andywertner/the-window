@@ -57,6 +57,7 @@ const notes = notesFrom(
 assert.equal(notes.length, 2);
 assert.equal(notes[0].welcome, true);
 assert.equal(notes[1].name, "Ada");
+assert.equal(notes[1].likes, 0);
 assert.equal(fivesFrom({ "win-fives": 4 }, "win-fives"), 4);
 assert.equal(fivesFrom({}, "win-fives"), 0);
 

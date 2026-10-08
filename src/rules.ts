@@ -68,25 +68,39 @@ export interface Note {
   name: string;
   text: string;
   welcome: boolean;
+  likes: number;
 }
 
-export function notesFrom(data: unknown, prefix: string, welcomeKey: string): Note[] {
+export function likeKey(key: string, notePrefix: string, likePrefix: string, welcomeKey: string): string | null {
+  if (key === welcomeKey) return `${likePrefix}welcome`;
+  if (!key.startsWith(notePrefix)) return null;
+  const id = key.slice(notePrefix.length);
+  return id ? `${likePrefix}${id}` : null;
+}
+
+export function notesFrom(data: unknown, prefix: string, welcomeKey: string, likePrefix = "win-k-"): Note[] {
   const record = asRecord(data);
   if (!record) return [];
   const notes: Note[] = [];
   for (const [key, value] of Object.entries(record)) {
     if (key === welcomeKey && typeof value === "string") {
-      notes.push({ key, name: "", text: value, welcome: true });
+      notes.push({ key, name: "", text: value, welcome: true, likes: likesOn(record, key, prefix, likePrefix, welcomeKey) });
       continue;
     }
     if (!key.startsWith(prefix) || !value || typeof value !== "object" || Array.isArray(value)) continue;
     const name = (value as { name?: unknown }).name;
     const text = (value as { text?: unknown }).text;
     if (typeof name !== "string" || typeof text !== "string") continue;
-    notes.push({ key, name, text, welcome: false });
+    notes.push({ key, name, text, welcome: false, likes: likesOn(record, key, prefix, likePrefix, welcomeKey) });
   }
   notes.sort((a, b) => Number(b.welcome) - Number(a.welcome) || a.name.localeCompare(b.name) || a.key.localeCompare(b.key));
   return notes;
+}
+
+function likesOn(record: Record<string, unknown>, key: string, notePrefix: string, likePrefix: string, welcomeKey: string): number {
+  const id = likeKey(key, notePrefix, likePrefix, welcomeKey);
+  const value = id ? record[id] : 0;
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
 export function fivesFrom(data: unknown, key: string): number {

@@ -12,7 +12,7 @@ export interface Seen {
 }
 
 export interface State {
-  phase: "name" | "lesson" | "done";
+  phase: "name" | "lesson" | "done" | "play";
   name: string;
   level: number;
   beat: number;
@@ -75,7 +75,7 @@ export function fresh(): State {
 
 export function load(): State {
   const saved = read(PROGRESS);
-  if (!saved || (saved.phase !== "name" && saved.phase !== "lesson" && saved.phase !== "done")) return fresh();
+  if (!saved || (saved.phase !== "name" && saved.phase !== "lesson" && saved.phase !== "done" && saved.phase !== "play")) return fresh();
   const next = fresh();
   next.phase = saved.phase;
   next.name = typeof saved.name === "string" ? saved.name : "";

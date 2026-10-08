@@ -1,10 +1,10 @@
 import "./style.css";
-import { clearLesson, deleteKey, ensureWelcome, getAll, getBadAddress, getMissing, incrementFives, postBroken, postRecords } from "./api";
+import { clearLesson, deleteKey, ensureWelcome, getAll, getBadAddress, getMissing, incrementFives, incrementKey, postBroken, postRecords } from "./api";
 import { LEVELS } from "./lesson";
-import { asRecord, cleanName, cleanNote, fivesFrom, gradeChoice, gradePost, noteKey, notesFrom, placeItem, sortDone, validName } from "./rules";
+import { asRecord, cleanName, cleanNote, fivesFrom, gradeChoice, gradePost, likeKey, noteKey, notesFrom, placeItem, sortDone, validName } from "./rules";
 import { GATE_MS, render } from "./render";
 import { clearMine, clearProgress, currentStep, fresh, load, save, type State } from "./state";
-import { FIVES_KEY, NOTE_PREFIX, WELCOME_KEY, WELCOME_TEXT } from "./config";
+import { FIVES_KEY, LIKE_PREFIX, NOTE_PREFIX, WELCOME_KEY, WELCOME_TEXT } from "./config";
 
 const teacher = new URLSearchParams(location.search).get("teacher") === "1";
 const app = document.querySelector<HTMLElement>("#app");
@@ -105,7 +105,7 @@ function afterEnter(): void {
 }
 
 function applyBoard(data: unknown): void {
-  state.board = notesFrom(data, NOTE_PREFIX, WELCOME_KEY);
+  state.board = notesFrom(data, NOTE_PREFIX, WELCOME_KEY, LIKE_PREFIX);
   state.fives = fivesFrom(data, FIVES_KEY);
   const live = new Set(state.board.map((note) => note.key));
   state.mine = state.mine.filter((key) => live.has(key));
@@ -323,6 +323,99 @@ async function onDelete(): Promise<void> {
   });
 }
 
+async function onPlayPost(): Promise<void> {
+  if (state.phase !== "play") return;
+  const note = cleanNote(noteField());
+  state.note = noteField();
+  if (!note) {
+    state.wrong = "The body is empty. A window often answers 400 Bad Request for that. We stopped this one before sending.";
+    draw();
+    return;
+  }
+  await run(async (id) => {
+    const key = noteKey(NOTE_PREFIX);
+    const likes = likeKey(key, NOTE_PREFIX, LIKE_PREFIX, WELCOME_KEY);
+    const posted = await postRecords({ [key]: { name: state.name, text: note }, ...(likes ? { [likes]: 0 } : {}) });
+    if (id !== ticket) return;
+    state.exchange = posted.exchange;
+    if (posted.status >= 400) {
+      state.wrong = "The window answered, and it did not take the note.";
+      return;
+    }
+    state.mine = state.mine.concat(key);
+    const got = await getAll();
+    if (id !== ticket) return;
+    applyBoard(got.json);
+    state.note = "";
+    state.success = "POST added your note. GET again to see what classmates added.";
+  });
+}
+
+async function onPlayGet(): Promise<void> {
+  if (state.phase !== "play") return;
+  await run(async (id) => {
+    const got = await getAll();
+    if (id !== ticket) return;
+    state.exchange = got.exchange;
+    applyBoard(got.json);
+    state.success = "GET read the board and left every note as it was.";
+  });
+}
+
+async function onPlayDelete(): Promise<void> {
+  if (state.phase !== "play") return;
+  const keys = state.mine.slice();
+  if (keys.length === 0) {
+    state.wrong = "There is no note of yours on the board.";
+    draw();
+    return;
+  }
+  await run(async (id) => {
+    let last = await deleteKey(keys[0] ?? "");
+    if (id !== ticket || !keys[0]) return;
+    for (const key of keys) {
+      if (key !== keys[0]) {
+        last = await deleteKey(key);
+        if (id !== ticket) return;
+      }
+      const likes = likeKey(key, NOTE_PREFIX, LIKE_PREFIX, WELCOME_KEY);
+      if (!likes) continue;
+      last = await deleteKey(likes);
+      if (id !== ticket) return;
+    }
+    state.exchange = last.exchange;
+    const got = await getAll();
+    if (id !== ticket) return;
+    applyBoard(got.json);
+    state.success = "DELETE took your notes down. The rest of the board is still there.";
+  });
+}
+
+async function onPlayLike(noteKeyValue: string): Promise<void> {
+  if (state.phase !== "play" || !noteKeyValue) return;
+  const key = likeKey(noteKeyValue, NOTE_PREFIX, LIKE_PREFIX, WELCOME_KEY);
+  if (!key) return;
+  await run(async (id) => {
+    let patched = await incrementKey(key);
+    if (id !== ticket) return;
+    if (patched.status >= 400) {
+      await postRecords({ [key]: 0 });
+      if (id !== ticket) return;
+      patched = await incrementKey(key);
+      if (id !== ticket) return;
+    }
+    state.exchange = patched.exchange;
+    if (patched.status >= 400) {
+      state.wrong = "The window answered, and the like did not change.";
+      return;
+    }
+    const got = await getAll();
+    if (id !== ticket) return;
+    applyBoard(got.json);
+    state.success = "PATCH added 1 like.";
+  });
+}
+
 async function onProbe(which: "empty" | "address" | "body"): Promise<void> {
   const step = currentStep(state);
   if (step?.kind !== "probe") return;
@@ -445,6 +538,18 @@ function onClick(event: MouseEvent): void {
     draw();
     return;
   }
+  if (act === "play") {
+    state.phase = "play";
+    state.wrong = null;
+    state.success = null;
+    draw();
+    void refreshQuiet();
+    return;
+  }
+  if (act === "play-post") void onPlayPost();
+  if (act === "play-get") void onPlayGet();
+  if (act === "play-delete") void onPlayDelete();
+  if (act === "play-like") void onPlayLike(target.dataset.key ?? "");
   if (act === "send-get") void onGet();
   if (act === "refresh-after-change") void onChangeGet();
   if (act === "verb") void onVerb(target.dataset.method ?? "");

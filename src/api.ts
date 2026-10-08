@@ -71,12 +71,16 @@ export function deleteKey(key: string): Promise<CallResult> {
   return call({ method: "DELETE", path: RECORDS_PATH, query: { key } });
 }
 
-export function incrementFives(): Promise<CallResult> {
+export function incrementKey(key: string): Promise<CallResult> {
   return call({
     method: "PATCH",
     path: RECORDS_PATH,
-    body: { action: "increment_by", data: { key: FIVES_KEY, amount: 1 } },
+    body: { action: "increment_by", data: { key, amount: 1 } },
   });
+}
+
+export function incrementFives(): Promise<CallResult> {
+  return incrementKey(FIVES_KEY);
 }
 
 export function getMissing(): Promise<CallResult> {

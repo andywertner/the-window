@@ -7,5 +7,6 @@ export const RECORDS_PATH = "/api/records";
 export const WELCOME_KEY = "win-welcome";
 export const FIVES_KEY = "win-fives";
 export const NOTE_PREFIX = "win-n-";
+export const LIKE_PREFIX = "win-k-";
 export const MISSING_KEY = "win-missing";
 export const WELCOME_TEXT = "The window is open. This note was already here.";
