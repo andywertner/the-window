@@ -344,6 +344,17 @@ function overlay(state: State): string {
       </div>
     </div></div>`;
   }
+  if (state.confirmPlay) {
+    return `<div class="veil"><form class="ask" id="play-form">
+      <p>Password for free play</p>
+      <input id="play-pass" type="password" autocomplete="off" />
+      ${state.playDenied ? `<p class="banner bad">That password is not right.</p>` : ""}
+      <div class="methods">
+        <button type="button" class="go quiet-btn" data-act="play-no">Cancel</button>
+        <button type="submit" class="go">Open</button>
+      </div>
+    </form></div>`;
+  }
   return "";
 }
 

@@ -433,6 +433,18 @@ async function onProbe(which: "empty" | "address" | "body"): Promise<void> {
   });
 }
 
+function enterPlay(): void {
+  state.confirmPlay = false;
+  state.playDenied = false;
+  state.confirmReset = false;
+  state.confirmClear = false;
+  state.phase = "play";
+  state.wrong = null;
+  state.success = null;
+  draw();
+  void refreshQuiet();
+}
+
 async function onClear(): Promise<void> {
   state.confirmClear = false;
   await run(async (id) => {
@@ -471,6 +483,21 @@ function onClick(event: MouseEvent): void {
   }
   if (act === "zoom") {
     setZoom(zoom + (target.dataset.dir === "in" ? 0.1 : -0.1));
+    return;
+  }
+  if (act === "free-play") {
+    state.confirmReset = false;
+    state.confirmClear = false;
+    state.confirmPlay = true;
+    state.playDenied = false;
+    draw();
+    document.querySelector<HTMLInputElement>("#play-pass")?.focus();
+    return;
+  }
+  if (act === "play-no") {
+    state.confirmPlay = false;
+    state.playDenied = false;
+    draw();
     return;
   }
   if (act === "teacher") {
@@ -539,11 +566,7 @@ function onClick(event: MouseEvent): void {
     return;
   }
   if (act === "play") {
-    state.phase = "play";
-    state.wrong = null;
-    state.success = null;
-    draw();
-    void refreshQuiet();
+    enterPlay();
     return;
   }
   if (act === "play-post") void onPlayPost();
@@ -591,9 +614,22 @@ document.addEventListener("focusout", () => {
   }, 0);
 });
 document.addEventListener("submit", (event) => {
-  if (!(event.target instanceof HTMLFormElement) || event.target.id !== "name-form") return;
+  if (!(event.target instanceof HTMLFormElement)) return;
+  if (event.target.id === "name-form") {
+    event.preventDefault();
+    begin();
+    return;
+  }
+  if (event.target.id !== "play-form") return;
   event.preventDefault();
-  begin();
+  const pass = document.querySelector<HTMLInputElement>("#play-pass")?.value.trim() ?? "";
+  if (pass !== "admin") {
+    state.playDenied = true;
+    draw();
+    document.querySelector<HTMLInputElement>("#play-pass")?.focus();
+    return;
+  }
+  enterPlay();
 });
 
 const savedZoom = Number(localStorage.getItem("the-window-zoom"));

@@ -37,6 +37,8 @@ export interface State {
   bootError: string | null;
   confirmReset: boolean;
   confirmClear: boolean;
+  confirmPlay: boolean;
+  playDenied: boolean;
 }
 
 export function emptySeen(): Seen {
@@ -70,6 +72,8 @@ export function fresh(): State {
     bootError: null,
     confirmReset: false,
     confirmClear: false,
+    confirmPlay: false,
+    playDenied: false,
   };
 }
 
@@ -103,7 +107,7 @@ export function load(): State {
 }
 
 export function save(state: State): void {
-  const { busy, board, confirmReset, confirmClear, bootError, wrong, badId, ...rest } = state;
+  const { busy, board, confirmReset, confirmClear, confirmPlay, playDenied, bootError, wrong, badId, ...rest } = state;
   write(PROGRESS, rest);
   saveMine(state.mine);
 }
