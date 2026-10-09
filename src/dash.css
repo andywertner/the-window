@@ -265,7 +265,7 @@ input, textarea {
   padding: 7px 10px;
 }
 .panel-title span { margin-left: auto; color: #536071; font-size: 0.78rem; font-weight: 800; }
-.t-mode, .t-clear, .t-x {
+.t-mode, .t-x {
   min-height: 0;
   padding: 0;
   border: 0;
@@ -279,17 +279,24 @@ input, textarea {
 }
 .t-mode.on { text-decoration: underline; }
 .t-clear {
-  color: #8d4038;
-  font-size: 0.72rem;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 2px solid var(--delete);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: none;
+  color: var(--delete);
+  font-size: 0.85rem;
+  font-weight: 900;
 }
 .t-x {
-  width: 18px;
-  height: 18px;
+  width: 28px;
+  height: 28px;
   margin-left: auto;
   border-radius: 99px;
   color: #8d4038;
-  font-size: 0.95rem;
-  line-height: 16px;
+  font-size: 1.1rem;
+  line-height: 26px;
 }
 .composer {
   display: grid;
