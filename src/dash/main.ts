@@ -40,6 +40,8 @@ interface DashState {
   busy: boolean;
   passOpen: boolean;
   passWrong: boolean;
+  passIntent: "board" | "teacher";
+  teacher: boolean;
 }
 
 const STORE = "window-dash-v1";
@@ -131,6 +133,8 @@ function fresh(): DashState {
     busy: false,
     passOpen: false,
     passWrong: false,
+    passIntent: "board",
+    teacher: false,
   };
 }
 
@@ -152,6 +156,8 @@ function load(): DashState {
       busy: false,
       passOpen: false,
       passWrong: false,
+      passIntent: "board",
+      teacher: false,
     };
   } catch {
     return base;
@@ -168,7 +174,7 @@ function loadMine(): string[] {
 }
 
 function save(): void {
-  const { board: _board, busy: _busy, passOpen: _passOpen, passWrong: _passWrong, ...saved } = state;
+  const { board: _board, busy: _busy, passOpen: _passOpen, passWrong: _passWrong, passIntent: _passIntent, teacher: _teacher, ...saved } = state;
   localStorage.setItem(STORE, JSON.stringify(saved));
   localStorage.setItem(MINE, JSON.stringify(state.mine));
 }
@@ -274,7 +280,12 @@ function playView(): string {
   return `${header("Message board free play")}
     <main class="play">
       <section class="play-board">
-        <div class="panel-title"><b>📋 Class board</b><span>What the app shows</span></div>
+        <div class="panel-title">
+          <b>📋 Class board</b>
+          <button class="t-mode ${state.teacher ? "on" : ""}" data-act="t-mode">T Mode</button>
+          ${state.teacher ? `<button class="t-clear" data-act="t-clear">Clear all</button>` : ""}
+          <span>What the app shows</span>
+        </div>
         <div class="composer">
           <textarea id="message" maxlength="80" placeholder="Write a kind class message.">${escape(state.message)}</textarea>
           <button class="action post" data-act="play-post">➕ POST</button>
@@ -294,7 +305,7 @@ function playView(): string {
 function noteView(note: Note): string {
   const mine = state.mine.includes(note.key);
   return `<article class="message ${mine ? "mine" : ""}">
-    <div><b>${note.welcome ? "Welcome" : escape(note.name)}</b>${mine ? "<em>yours</em>" : ""}</div>
+    <div><b>${note.welcome ? "Welcome" : escape(note.name)}</b>${mine ? "<em>yours</em>" : ""}${state.teacher ? `<button class="t-x" data-act="t-delete" data-key="${escape(note.key)}" aria-label="Delete this message">×</button>` : ""}</div>
     <p>${escape(note.text)}</p>
     ${note.welcome ? "" : `<button class="like" data-act="play-like" data-key="${escape(note.key)}">🩹 PATCH a like · ${note.likes}</button>`}
   </article>`;
@@ -431,6 +442,35 @@ async function playLike(key: string): Promise<void> {
   });
 }
 
+async function teacherDelete(key: string): Promise<void> {
+  if (!state.teacher || !key) return;
+  await run(async () => {
+    await deleteKey(likeKey(key));
+    const last = await deleteKey(key);
+    const data = asRecord(last.json);
+    state.board = data ? boardFrom(data) : state.board.filter((note) => note.key !== key);
+    state.mine = state.mine.filter((mineKey) => mineKey !== key);
+    state.exchange = simpleExchange(last.exchange, "That message was deleted.");
+  });
+}
+
+async function teacherClear(): Promise<void> {
+  if (!state.teacher) return;
+  await run(async () => {
+    const got = await getAll();
+    const data = asRecord(got.json) ?? {};
+    let last = got;
+    for (const key of Object.keys(data)) {
+      if (!key.startsWith("dash-")) continue;
+      last = await deleteKey(key);
+    }
+    last = await postRecords({ [WELCOME_KEY]: WELCOME_TEXT });
+    state.board = [{ key: WELCOME_KEY, name: "Welcome", text: WELCOME_TEXT, likes: 0, welcome: true, at: 0 }];
+    state.mine = [];
+    state.exchange = simpleExchange(last.exchange, "The Dash board was cleared. The welcome message is back.");
+  });
+}
+
 async function playDelete(): Promise<void> {
   const keys = state.mine.slice();
   if (!keys.length) {
@@ -498,11 +538,25 @@ root.addEventListener("click", (event) => {
   } else if (act === "game-next") nextGame();
   else if (act === "open-play") openPlay();
   else if (act === "skip") {
+    state.passIntent = "board";
     state.passOpen = true;
     state.passWrong = false;
     draw();
     document.querySelector<HTMLInputElement>("#pass")?.focus();
-  } else if (act === "skip-close") {
+  } else if (act === "t-mode") {
+    if (state.teacher) {
+      state.teacher = false;
+      draw();
+    } else {
+      state.passIntent = "teacher";
+      state.passOpen = true;
+      state.passWrong = false;
+      draw();
+      document.querySelector<HTMLInputElement>("#pass")?.focus();
+    }
+  } else if (act === "t-clear") void teacherClear();
+  else if (act === "t-delete") void teacherDelete(target.dataset.key ?? "");
+  else if (act === "skip-close") {
     state.passOpen = false;
     draw();
   } else if (act === "play-get") void playGet();
@@ -538,6 +592,11 @@ root.addEventListener("submit", (event) => {
       state.passWrong = true;
       draw();
       document.querySelector<HTMLInputElement>("#pass")?.focus();
+    } else if (state.passIntent === "teacher") {
+      state.teacher = true;
+      state.passOpen = false;
+      state.passWrong = false;
+      draw();
     } else openPlay();
   }
 });

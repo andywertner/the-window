@@ -265,6 +265,32 @@ input, textarea {
   padding: 7px 10px;
 }
 .panel-title span { margin-left: auto; color: #536071; font-size: 0.78rem; font-weight: 800; }
+.t-mode, .t-clear, .t-x {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 700;
+}
+.t-mode {
+  color: #8d7352;
+  font-size: 0.68rem;
+}
+.t-mode.on { text-decoration: underline; }
+.t-clear {
+  color: #8d4038;
+  font-size: 0.72rem;
+}
+.t-x {
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  border-radius: 99px;
+  color: #8d4038;
+  font-size: 0.95rem;
+  line-height: 16px;
+}
 .composer {
   display: grid;
   grid-template-columns: minmax(160px, 1fr) auto auto auto;
