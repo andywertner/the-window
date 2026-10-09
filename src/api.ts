@@ -35,6 +35,7 @@ export async function call(opts: CallOpts): Promise<CallResult> {
   const raw = opts.rawBody !== undefined ? opts.rawBody : opts.body !== undefined ? JSON.stringify(opts.body) : undefined;
   const response = await fetch(real, {
     method: opts.method,
+    cache: "no-store",
     headers: raw !== undefined ? { "Content-Type": "application/json" } : undefined,
     body: raw,
   });
@@ -69,6 +70,10 @@ export function postRecords(body: unknown): Promise<CallResult> {
 
 export function deleteKey(key: string): Promise<CallResult> {
   return call({ method: "DELETE", path: RECORDS_PATH, query: { key } });
+}
+
+export function deleteKeys(keys: string[]): Promise<CallResult> {
+  return call({ method: "PATCH", path: RECORDS_PATH, body: { action: "delete", data: keys } });
 }
 
 export function incrementKey(key: string): Promise<CallResult> {

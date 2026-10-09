@@ -1,5 +1,5 @@
 import "../dash.css";
-import { deleteKey, getAll, incrementKey, postRecords, type Exchange } from "../api";
+import { deleteKey, deleteKeys, getAll, incrementKey, postRecords, type Exchange } from "../api";
 import { asRecord, cleanName, cleanNote, noteKey, validName } from "../rules";
 
 type Verb = "GET" | "POST" | "PATCH" | "DELETE";
@@ -283,19 +283,21 @@ function playView(): string {
   return `${header("Message board free play")}
     <main class="play">
       <section class="play-board">
-        <div class="panel-title">
-          <b>📋 Class board</b>
-          <button class="t-mode ${state.teacher ? "on" : ""}" data-act="t-mode">T Mode</button>
-          ${state.teacher ? `<button class="t-clear" data-act="t-clear">Clear all</button>` : ""}
-          <span>${state.status ? escape(state.status) : "What the app shows"}</span>
+        <div class="play-top">
+          <div class="panel-title">
+            <b>📋 Class board</b>
+            <button type="button" class="t-mode ${state.teacher ? "on" : ""}" data-act="t-mode">T Mode</button>
+            <span>What the app shows</span>
+          </div>
+          ${state.teacher ? `<button type="button" class="t-clear" data-act="t-clear">${escape(state.status || "Clear all")}</button>` : ""}
+          <div class="composer">
+            <textarea id="message" maxlength="80" placeholder="Write a kind class message.">${escape(state.message)}</textarea>
+            <button class="action post" data-act="play-post">➕ POST</button>
+            <button class="action get" data-act="play-get">👀 GET</button>
+            <button class="action delete" data-act="play-delete">🗑️ DELETE my messages</button>
+          </div>
+          ${state.wrong ? `<p class="feedback bad">${escape(state.wrong)}</p>` : ""}
         </div>
-        <div class="composer">
-          <textarea id="message" maxlength="80" placeholder="Write a kind class message.">${escape(state.message)}</textarea>
-          <button class="action post" data-act="play-post">➕ POST</button>
-          <button class="action get" data-act="play-get">👀 GET</button>
-          <button class="action delete" data-act="play-delete">🗑️ DELETE my messages</button>
-        </div>
-        ${state.wrong ? `<p class="feedback bad">${escape(state.wrong)}</p>` : ""}
         <div class="messages" id="messages">${board}</div>
       </section>
       <aside class="log">
@@ -308,7 +310,7 @@ function playView(): string {
 function noteView(note: Note): string {
   const mine = state.mine.includes(note.key);
   return `<article class="message ${mine ? "mine" : ""}">
-    <div><b>${note.welcome ? "Welcome" : escape(note.name)}</b>${mine ? "<em>yours</em>" : ""}${state.teacher ? `<button class="t-x" data-act="t-delete" data-key="${escape(note.key)}" aria-label="Delete this message">×</button>` : ""}</div>
+    <div><b>${note.welcome ? "Welcome" : escape(note.name)}</b>${mine ? "<em>yours</em>" : ""}${state.teacher ? `<button type="button" class="t-x" data-act="t-delete" data-key="${escape(note.key)}" aria-label="Delete this message">×</button>` : ""}</div>
     <p>${escape(note.text)}</p>
     ${note.welcome ? "" : `<button class="like" data-act="play-like" data-key="${escape(note.key)}">🩹 PATCH a like · ${note.likes}</button>`}
   </article>`;
@@ -445,10 +447,14 @@ async function playLike(key: string): Promise<void> {
   });
 }
 
+function dashKeys(data: Record<string, unknown>): string[] {
+  return Object.keys(data).filter((key) => key.startsWith("dash-"));
+}
+
 async function teacherDelete(key: string): Promise<void> {
   if (!state.teacher || !key) return;
   await run(async () => {
-    const result = await postRecords({ [key]: null, [likeKey(key)]: null });
+    const result = await deleteKeys([key, likeKey(key)]);
     if (result.status >= 400) {
       state.wrong = "That message was not deleted. Try again.";
       state.exchange = simpleExchange(result.exchange, "The message is still stored.");
@@ -467,27 +473,37 @@ async function teacherClear(): Promise<void> {
     try {
       const got = await getAll();
       const data = asRecord(got.json) ?? {};
-      const body: Record<string, string | null> = { [WELCOME_KEY]: WELCOME_TEXT };
-      for (const key of Object.keys(data)) {
-        if (key.startsWith("dash-") && key !== WELCOME_KEY) body[key] = null;
-      }
-      const result = await postRecords(body);
+      const keys = dashKeys(data);
+      const result = keys.length ? await deleteKeys(keys) : got;
       if (result.status >= 400) {
         state.wrong = "Clear did not go through. Try again.";
         state.exchange = simpleExchange(result.exchange, "The board was not cleared.");
         return;
       }
-      const check = await getAll();
-      const left = asRecord(check.json) ?? {};
-      const leftovers = Object.keys(left).filter((key) => key.startsWith("dash-") && key !== WELCOME_KEY);
+      const posted = await postRecords({ [WELCOME_KEY]: WELCOME_TEXT });
+      if (posted.status >= 400) {
+        state.wrong = "The notes were removed, but the welcome message did not come back. Press GET.";
+        state.board = [];
+        state.mine = [];
+        state.exchange = simpleExchange(posted.exchange, "Welcome message was not stored.");
+        return;
+      }
+      let left = asRecord((await getAll()).json) ?? {};
+      let leftovers = dashKeys(left).filter((key) => key !== WELCOME_KEY);
+      if (leftovers.length) {
+        await deleteKeys(leftovers);
+        await postRecords({ [WELCOME_KEY]: WELCOME_TEXT });
+        left = asRecord((await getAll()).json) ?? {};
+        leftovers = dashKeys(left).filter((key) => key !== WELCOME_KEY);
+      }
       state.board = boardFrom(left);
       state.mine = [];
       if (leftovers.length) {
         state.wrong = "Some messages are still stored. Press Clear all again.";
-        state.exchange = simpleExchange(check.exchange, "Clear did not remove every message.");
+        state.exchange = simpleExchange(posted.exchange, "Clear did not remove every message.");
         return;
       }
-      state.exchange = simpleExchange(result.exchange, "The Dash board was cleared. The welcome message is back.");
+      state.exchange = simpleExchange(keys.length ? result.exchange : posted.exchange, "The Dash board was cleared. The welcome message is back.");
     } finally {
       state.status = "";
     }

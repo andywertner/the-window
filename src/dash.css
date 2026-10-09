@@ -254,9 +254,10 @@ input, textarea {
   overflow: hidden;
 }
 .play-board {
-  grid-template-rows: auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   background: #d6b27d;
 }
+.play-top { display: grid; }
 .log { grid-template-rows: auto minmax(0, 1fr); background: #cde5f6; }
 .panel-title {
   display: flex;
@@ -279,14 +280,15 @@ input, textarea {
 }
 .t-mode.on { text-decoration: underline; }
 .t-clear {
-  min-height: 32px;
+  min-height: 36px;
+  margin: 0 8px 8px;
   padding: 4px 10px;
   border: 2px solid var(--delete);
   border-radius: 10px;
   background: #fff;
   box-shadow: none;
   color: var(--delete);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 900;
 }
 .t-x {
